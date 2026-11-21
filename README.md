@@ -14,7 +14,9 @@ A Django helpdesk application with Reporter, Agent, and Admin roles. Reporters s
 ## Run locally
 
 ```powershell
+python -m venv venv
 venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
