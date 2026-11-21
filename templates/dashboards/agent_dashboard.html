@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Agent Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>🔧 Agent Dashboard</h2>
+    <a href="{% url 'agent_incidents' %}" class="btn btn-primary">View Assigned</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-warning border-4">
+            <div class="number text-warning">{{ assigned_count }}</div>
+            <div class="text-muted">Active Assignments</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-danger border-4">
+            <div class="number text-danger">{{ overdue_count }}</div>
+            <div class="text-muted">Overdue</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-success border-4">
+            <div class="number text-success">{{ resolved_count }}</div>
+            <div class="text-muted">Resolved (awaiting closure)</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><strong>Recently Updated</strong></div>
+    <div class="list-group list-group-flush">
+        {% for incident in recent %}
+            <a href="{% url 'incident_detail' incident.pk %}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between">
+                    <span>{{ incident.title }}</span>
+                    <span class="badge text-bg-{% if incident.is_overdue %}danger{% elif incident.status == 'IN_PROGRESS' %}warning{% else %}success{% endif %}">
+                        {% if incident.is_overdue %}Overdue{% else %}{{ incident.get_status_display }}{% endif %}
+                    </span>
+                </div>
+                <small class="text-muted">{{ incident.category }} &middot; Priority: {{ incident.get_priority_display }}</small>
+            </a>
+        {% empty %}
+            <div class="list-group-item text-muted">No assigned incidents.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

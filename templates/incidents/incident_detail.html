@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ incident.title }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h2>{{ incident.title }}</h2>
+        <span class="badge text-bg-{% if incident.status == 'OPEN' %}primary{% elif incident.status == 'IN_PROGRESS' %}warning{% elif incident.status == 'RESOLVED' %}success{% else %}secondary{% endif %} me-1">
+            {{ incident.get_status_display }}
+        </span>
+        <span class="badge text-bg-{% if incident.priority == 'CRITICAL' %}danger{% elif incident.priority == 'HIGH' %}warning{% elif incident.priority == 'MEDIUM' %}info{% else %}secondary{% endif %}">
+            {{ incident.get_priority_display }}
+        </span>
+        {% if incident.is_overdue %}<span class="badge text-bg-danger ms-1">⚠ Overdue</span>{% endif %}
+    </div>
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">← Back</a>
+</div>
+
+<div class="row g-4">
+    <!-- Left: Details + Comments -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Description</h5>
+                <p>{{ incident.description|linebreaksbr }}</p>
+                <dl class="row mt-3">
+                    <dt class="col-sm-4">Category</dt><dd class="col-sm-8">{{ incident.category }}</dd>
+                    <dt class="col-sm-4">Reporter</dt><dd class="col-sm-8">{{ incident.reported_by.username }}</dd>
+                    <dt class="col-sm-4">Assigned Agent</dt><dd class="col-sm-8">{{ incident.assigned_to|default:"Not assigned yet" }}</dd>
+                    <dt class="col-sm-4">Deadline</dt>
+                    <dd class="col-sm-8">
+                        {% if incident.deadline %}{{ incident.deadline|date:"d M Y H:i" }}{% else %}<span class="text-muted">Not set</span>{% endif %}
+                    </dd>
+                    <dt class="col-sm-4">Created</dt><dd class="col-sm-8">{{ incident.created_at|date:"d M Y H:i" }}</dd>
+                    <dt class="col-sm-4">Last Updated</dt><dd class="col-sm-8">{{ incident.updated_at|date:"d M Y H:i" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="mb-3">
+            {% if user.role == 'REPORTER' and incident.status == 'OPEN' %}
+                <a class="btn btn-primary" href="{% url 'edit_incident' incident.pk %}">✏ Edit</a>
+                <a class="btn btn-outline-danger ms-2" href="{% url 'delete_incident' incident.pk %}">🗑 Delete</a>
+            {% elif user.role == 'AGENT' %}
+                <a class="btn btn-warning" href="{% url 'agent_update' incident.pk %}">🔄 Update Status</a>
+            {% elif user.role == 'ADMIN' %}
+                <a class="btn btn-primary" href="{% url 'admin_manage_incident' incident.pk %}">⚙ Manage</a>
+                {% if incident.status == 'RESOLVED' %}
+                    <form method="post" action="{% url 'close_incident' incident.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button class="btn btn-success ms-2">✅ Close Incident</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Comments -->
+        <div class="card mb-4">
+            <div class="card-header"><strong>💬 Comments</strong></div>
+            <div class="card-body">
+                {% for comment in comments %}
+                    <div class="border rounded p-3 mb-2 {% if comment.internal %}bg-light{% endif %}">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ comment.author.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at|date:"d M Y H:i" }}</small>
+                        </div>
+                        {% if comment.internal %}<span class="badge text-bg-dark mb-1">Internal</span>{% endif %}
+                        <p class="mb-0 mt-1">{{ comment.text|linebreaksbr }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">No comments yet.</p>
+                {% endfor %}
+
+                <hr>
+                <h6>Add Comment</h6>
+                <form method="post" action="{% url 'add_comment' incident.pk %}">
+                    {% csrf_token %}
+                    <textarea name="text" class="form-control mb-2" rows="3" placeholder="Write a comment..."></textarea>
+                    {% if user.role in 'AGENT ADMIN' %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="internal" id="internal">
+                            <label class="form-check-label" for="internal">Mark as internal (not visible to reporter)</label>
+                        </div>
+                    {% endif %}
+                    <button class="btn btn-outline-primary btn-sm">Post Comment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Attachments + Activity -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header"><strong>📎 Attachments</strong></div>
+            <div class="card-body">
+                {% for attachment in incident.attachments.all %}
+                    <p><a href="{{ attachment.file.url }}" target="_blank">📄 {{ attachment.file.name|cut:"incident_attachments/" }}</a></p>
+                {% empty %}
+                    <p class="text-muted">No attachments.</p>
+                {% endfor %}
+                <hr>
+                <form method="post" enctype="multipart/form-data" action="{% url 'add_attachment' incident.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <input type="file" name="file" class="form-control form-control-sm">
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm">Upload</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><strong>🕐 Activity Log</strong></div>
+            <div class="card-body p-2" style="max-height:300px; overflow-y:auto;">
+                {% for log in incident.audit_logs.all %}
+                    <div class="border-bottom py-2 px-1">
+                        <small class="text-muted">{{ log.timestamp|date:"d M H:i" }}</small><br>
+                        <small><strong>{{ log.changed_by|default:"System" }}</strong>: {{ log.message }}
+                        {% if log.old_status %} <span class="text-muted">({{ log.old_status }} → {{ log.new_status }})</span>{% endif %}
+                        </small>
+                    </div>
+                {% empty %}
+                    <p class="text-muted small p-2">No activity yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

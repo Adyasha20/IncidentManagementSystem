@@ -1,0 +1,27 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Database (contains test users and data)
+db.sqlite3
+*.sqlite3
+
+# Uploaded files
+media/
+
+# Collected static files
+staticfiles/
+
+# Secrets
+.env
+
+# Editor / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

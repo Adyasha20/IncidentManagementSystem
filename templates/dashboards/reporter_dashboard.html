@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Reporter Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>👤 Reporter Dashboard</h2>
+    <a href="{% url 'create_incident' %}" class="btn btn-primary">+ New Incident</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-primary border-4">
+            <div class="number text-primary">{{ open_count }}</div>
+            <div class="text-muted">Open</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-warning border-4">
+            <div class="number text-warning">{{ progress_count }}</div>
+            <div class="text-muted">In Progress</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-success border-4">
+            <div class="number text-success">{{ resolved_count }}</div>
+            <div class="text-muted">Resolved / Closed</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Recent Incidents</strong>
+        <a href="{% url 'my_incidents' %}" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="list-group list-group-flush">
+        {% for incident in recent %}
+            <a href="{% url 'incident_detail' incident.pk %}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between">
+                    <span>{{ incident.title }}</span>
+                    <span class="badge text-bg-{% if incident.status == 'OPEN' %}primary{% elif incident.status == 'IN_PROGRESS' %}warning{% elif incident.status == 'RESOLVED' %}success{% else %}secondary{% endif %}">
+                        {{ incident.get_status_display }}
+                    </span>
+                </div>
+                <small class="text-muted">{{ incident.category }} &middot; {{ incident.created_at|date:"d M Y" }}</small>
+            </a>
+        {% empty %}
+            <div class="list-group-item text-muted">No incidents yet. Create your first one!</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

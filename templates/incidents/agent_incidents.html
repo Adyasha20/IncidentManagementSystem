@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Assigned Incidents{% endblock %}
+{% block content %}
+<h2 class="mb-3">🔧 Assigned to Me</h2>
+{% include 'incidents/filter_form.html' %}
+<div class="row g-3 mt-2">
+    {% for incident in incidents %}
+        <div class="col-md-6">
+            <div class="card {% if incident.is_overdue %}border-danger{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title mb-1"><a href="{% url 'incident_detail' incident.pk %}">{{ incident.title }}</a></h5>
+                        <span class="badge text-bg-{% if incident.status == 'IN_PROGRESS' %}warning{% elif incident.status == 'RESOLVED' %}success{% else %}primary{% endif %}">{{ incident.get_status_display }}</span>
+                    </div>
+                    <p class="text-muted small mb-2">{{ incident.category }} &middot; {{ incident.get_priority_display }} priority</p>
+                    {% if incident.is_overdue %}<span class="badge text-bg-danger">⚠ Overdue</span>{% endif %}
+                    <div class="mt-2">
+                        <a href="{% url 'agent_update' incident.pk %}" class="btn btn-sm btn-warning">Update Status</a>
+                        <a href="{% url 'incident_detail' incident.pk %}" class="btn btn-sm btn-outline-secondary ms-1">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-muted">No assigned incidents.</p>
+    {% endfor %}
+</div>
+{% endblock %}

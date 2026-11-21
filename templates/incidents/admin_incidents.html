@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}All Incidents{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>👑 All Incidents</h2>
+    <a href="{% url 'export_csv' %}" class="btn btn-outline-secondary">⬇ Export CSV</a>
+</div>
+{% include 'incidents/filter_form.html' %}
+<div class="card mt-3">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>#</th><th>Title</th><th>Reporter</th><th>Agent</th><th>Priority</th><th>Status</th><th>Deadline</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for incident in incidents %}
+                <tr class="{% if incident.is_overdue %}table-danger{% endif %}">
+                    <td class="text-muted">#{{ incident.pk }}</td>
+                    <td><a href="{% url 'incident_detail' incident.pk %}">{{ incident.title }}</a></td>
+                    <td>{{ incident.reported_by.username }}</td>
+                    <td>{{ incident.assigned_to|default:"—" }}</td>
+                    <td><span class="badge text-bg-{% if incident.priority == 'CRITICAL' %}danger{% elif incident.priority == 'HIGH' %}warning{% else %}secondary{% endif %}">{{ incident.get_priority_display }}</span></td>
+                    <td><span class="badge text-bg-{% if incident.status == 'OPEN' %}primary{% elif incident.status == 'IN_PROGRESS' %}warning{% elif incident.status == 'RESOLVED' %}success{% else %}secondary{% endif %}">{{ incident.get_status_display }}</span></td>
+                    <td><small>{% if incident.is_overdue %}<span class="text-danger fw-bold">Overdue</span>{% else %}{{ incident.deadline|date:"d M Y"|default:"—" }}{% endif %}</small></td>
+                    <td><a href="{% url 'admin_manage_incident' incident.pk %}" class="btn btn-sm btn-outline-primary">Manage</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No incidents found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

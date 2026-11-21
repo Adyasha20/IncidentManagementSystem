@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}My Incidents{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>📋 My Incidents</h2>
+    <a href="{% url 'create_incident' %}" class="btn btn-primary">+ New Incident</a>
+</div>
+
+{% include 'incidents/filter_form.html' %}
+
+<div class="card mt-3">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>#</th><th>Title</th><th>Category</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for incident in incidents %}
+                <tr>
+                    <td class="text-muted">#{{ incident.pk }}</td>
+                    <td><a href="{% url 'incident_detail' incident.pk %}">{{ incident.title }}</a></td>
+                    <td>{{ incident.category }}</td>
+                    <td>
+                        <span class="badge text-bg-{% if incident.priority == 'CRITICAL' %}danger{% elif incident.priority == 'HIGH' %}warning{% elif incident.priority == 'MEDIUM' %}info{% else %}secondary{% endif %}">
+                            {{ incident.get_priority_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge text-bg-{% if incident.status == 'OPEN' %}primary{% elif incident.status == 'IN_PROGRESS' %}warning{% elif incident.status == 'RESOLVED' %}success{% else %}secondary{% endif %}">
+                            {{ incident.get_status_display }}
+                        </span>
+                    </td>
+                    <td><small>{{ incident.created_at|date:"d M Y" }}</small></td>
+                    <td>
+                        {% if incident.status == 'OPEN' %}
+                            <a href="{% url 'edit_incident' incident.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a href="{% url 'delete_incident' incident.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                        {% else %}
+                            <a href="{% url 'incident_detail' incident.pk %}" class="btn btn-sm btn-outline-secondary">View</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No incidents found. <a href="{% url 'create_incident' %}">Create one?</a></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
